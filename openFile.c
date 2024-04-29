@@ -367,6 +367,10 @@ int openFile(char *path)
         {
             fileData.scroll = fileData.cursor_y;
         }
+        if (fileData.cursor_y - (LINES - 4) == fileData.scroll)
+        {
+            fileData.scroll++;
+        }
         lineAndCharNum = getLineAndCharNum(content);
         fileData.numLines = lineAndCharNum.lineNum;
         fileData.numChars = lineAndCharNum.charNum;
