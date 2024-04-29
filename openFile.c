@@ -122,6 +122,8 @@ int openFile(char *path)
 
     int choice;
     int cursorLineLength;
+    char *newContent;
+    int lineWidth;
     int running = 1;
     while (1)
     {
@@ -176,7 +178,7 @@ int openFile(char *path)
                 }
                 break;
             case KEY_RIGHT:
-                int lineWidth = lineLength(content, fileData.cursor_y);
+                lineWidth = lineLength(content, fileData.cursor_y);
                 if (across < lineWidth)
                 {
                     across++;
@@ -210,7 +212,7 @@ int openFile(char *path)
             switch (choice)
             {
             case 10:
-                char *newContent = malloc(strlen(content) + 2);
+                newContent = malloc(strlen(content) + 2);
                 strncpy(newContent, content, cursorToCharPos(content, fileData.cursor_x, fileData.cursor_y));
                 newContent[cursorToCharPos(content, fileData.cursor_x, fileData.cursor_y)] = '\n';
                 strncpy(newContent + cursorToCharPos(content, fileData.cursor_x, fileData.cursor_y) + 1, content + cursorToCharPos(content, fileData.cursor_x, fileData.cursor_y), strlen(content) - cursorToCharPos(content, fileData.cursor_x, fileData.cursor_y));

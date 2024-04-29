@@ -49,7 +49,7 @@ void render(struct FileData fileData)
                 printw(" ");
             }
             printw("%s", line);
-            printw(" | ", LineNum);
+            printw(" | ");
             LineNum++;
             newLine = 0;
             free(line);
