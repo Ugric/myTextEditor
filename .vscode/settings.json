@@ -1,0 +1,7 @@
+{
+    "files.associations": {
+        "*.ejs": "html",
+        "ncurses.h": "c",
+        "stdio.h": "c"
+    }
+}
