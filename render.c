@@ -1,58 +1,79 @@
 #include "openFile.h"
+#include "config.h"
 
 #include <ncurses.h>
 #include <string.h>
 #include <stdio.h>
+#include <stdlib.h>
 
-void render(struct FileData fileData) {
+void render(struct FileData fileData)
+{
+    char *content = *fileData.content;
     clear();
-    
+
     // Display Header
-    printw("%s\n", fileData.path);
-    int screenWidth = getmaxx(stdscr);
-    for (int i = 0; i < screenWidth; i++) {
+    printw("%s - %s\n", programName, *fileData.path);
+    for (int i = 0; i < COLS; i++)
+    {
         printw("-");
     }
 
     // Display content
-    int widthOfLineNumText = 4;
+    char *line = malloc(1);
+    sprintf(line, "%d", fileData.numLines);
+    int widthOfLineNumText = strlen(line) + 1;
     int contentBeginX = widthOfLineNumText + 3;
     int contentBeginY = 2;
     int contentHeight = LINES - 4;
+    int contentWidth = COLS - contentBeginX - 1;
 
     int LineNum = 1;
     int newLine = 1;
-    for (int i = 0; i < strlen(fileData.content); i++) {
-        if (newLine) {
-            printw("%4d | ", LineNum);
+    int length = strlen(content);
+    for (int i = 0; (i < length+1)&&(LineNum <= (fileData.scroll+contentHeight+contentBeginY-1)); i++)
+    {
+        if (LineNum < fileData.scroll+1)
+        {
+            if (i<length && content[i] == '\n')
+            {
+                LineNum++;
+            }
+            continue;
+        }
+        if (newLine)
+        {
+            char* line = malloc(1);
+            sprintf(line, "%d", LineNum);
+            for (int i = 0; i < widthOfLineNumText - strlen(line); i++)
+            {
+                printw(" ");
+            }
+            printw("%s", line);
+            printw(" | ", LineNum);
             LineNum++;
             newLine = 0;
+            free(line);
         }
-        if (fileData.content[i] == '\n') {
+        if (i<length && content[i] == '\n')
+        {
             newLine = 1;
         }
-        printw("%c", fileData.content[i]);
+        if (i<length)
+        {
+            printw("%c", content[i]);
+        }
     }
-    
 
     // footer
     move(LINES - 2, 0);
-    for (int i = 0; i < screenWidth; i++) {
+    for (int i = 0; i < COLS; i++)
+    {
         printw("-");
     }
-    int numLines = 0;
-    int numChars = 0;
-    for (int i = 0; i < strlen(fileData.content); i++) {
-        if (fileData.content[i] == '\n') {
-            numLines++;
-            numChars = 0;
-        } else {
-            numChars++;
-        }
-    }
-    printw("Lines: %d, Chars: %d, Cursor: %d, %d", numLines, numChars, fileData.cursor_x, fileData.cursor_y);
-    
-    move(contentBeginY, contentBeginX);
+    printw("Lines: %d, Chars: %d, Cursor: %d, %d, Mode: %d", fileData.numLines, fileData.numChars, fileData.cursor_x, fileData.cursor_y, *fileData.mode);
+
+    move(contentBeginY + fileData.cursor_y-fileData.scroll, contentBeginX + fileData.cursor_x);
 
     refresh();
+    free(line);
 }
