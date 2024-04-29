@@ -7,6 +7,7 @@ struct FileData
 {
     char **path;
     char **content;
+    char **command;
     int *mode;
     int cursor_x;
     int cursor_y;

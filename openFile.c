@@ -6,6 +6,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <ctype.h>
 
 struct lineAndCharNum
 {
@@ -52,10 +53,39 @@ int lineLength(char *content, int cursor_y)
     return across;
 }
 
+int cursorToCharPos(char *content, int cursor_x, int cursor_y)
+{
+    if (cursor_y == 0)
+    {
+        return cursor_x;
+    }
+    int numLines = 0;
+    int numChars = strlen(content);
+    int across = 0;
+    int i;
+    for (i = 0; i < strlen(content); i++)
+    {
+        if (content[i] == '\n')
+        {
+            numLines++;
+            if (numLines == cursor_y)
+            {
+                return i + cursor_x+1;
+            }
+            across = 0;
+        }
+        else
+        {
+            across++;
+        }
+    }
+    return i;
+}
+
 int openFile(char *path)
 {
     ESCDELAY = 0;
-    char *content = malloc(1);
+    char *content = malloc(0);
 
     if (strlen(path) != 0)
     {
@@ -67,16 +97,17 @@ int openFile(char *path)
             fseek(fptr, 0, SEEK_END);
             long fsize = ftell(fptr);
             fseek(fptr, 0, SEEK_SET);
-            free(content);
-            content = malloc(fsize + 1);
+            content = realloc(content, fsize + 1);
             fread(content, 1, fsize, fptr);
             content[fsize] = 0;
             fclose(fptr);
         }
     }
     int mode = 0;
+    char *command = malloc(1);
+    command[0] = '\0';
 
-    struct FileData fileData = {&path, &content, &mode, 0, 0, 0, 0, 0};
+    struct FileData fileData = {&path, &content, &command, &mode, 0, 0, 0, 0, 0};
 
     initscr();
     cbreak();
@@ -95,6 +126,7 @@ int openFile(char *path)
     while (1)
     {
         choice = getch(); // Get user input
+        printf("%d\n", choice);
         if (mode != 2)
         {
             switch (choice)
@@ -177,20 +209,150 @@ int openFile(char *path)
         case 1:
             switch (choice)
             {
+            case 10:
+                char *newContent = malloc(strlen(content) + 2);
+                strncpy(newContent, content, cursorToCharPos(content, fileData.cursor_x, fileData.cursor_y));
+                newContent[cursorToCharPos(content, fileData.cursor_x, fileData.cursor_y)] = '\n';
+                strncpy(newContent + cursorToCharPos(content, fileData.cursor_x, fileData.cursor_y) + 1, content + cursorToCharPos(content, fileData.cursor_x, fileData.cursor_y), strlen(content) - cursorToCharPos(content, fileData.cursor_x, fileData.cursor_y));
+                newContent[strlen(content) + 1] = '\0';
+                free(content);
+                content = newContent;
+                fileData.cursor_y++;
+                fileData.cursor_x = 0;
+                across = 0;
+                break;
             case 27:
                 mode = 0;
                 break;
-
+            case KEY_BACKSPACE:
+                if (strlen(content) > 0)
+                {
+                    int cursorPos = cursorToCharPos(content, fileData.cursor_x, fileData.cursor_y);
+                    if (cursorPos == 0)
+                    {
+                        break;
+                    }
+                    int length = lineLength(content, fileData.cursor_y-1);
+                    char *newContent = malloc(strlen(content));
+                    strncpy(newContent, content, cursorPos - 1);
+                    strncpy(newContent + cursorPos - 1, content + cursorPos, strlen(content) - cursorPos);
+                    newContent[strlen(content) - 1] = '\0';
+                    free(content);
+                    content = newContent;
+                    fileData.cursor_x--;
+                    if (fileData.cursor_x < 0 && fileData.cursor_y > 0)
+                    {
+                        fileData.cursor_y--;
+                        fileData.cursor_x = length;
+                    }
+                    across = fileData.cursor_x;
+                }
+                break;
+            case KEY_DC:
+                if (strlen(content) > 0)
+                {
+                    int cursorPos = cursorToCharPos(content, fileData.cursor_x, fileData.cursor_y);
+                    if (cursorPos == strlen(content))
+                    {
+                        break;
+                    }
+                    int length = lineLength(content, fileData.cursor_y);
+                    char *newContent = malloc(strlen(content));
+                    strncpy(newContent, content, cursorPos);
+                    strncpy(newContent + cursorPos, content + cursorPos + 1, strlen(content) - cursorPos);
+                    newContent[strlen(content) - 1] = '\0';
+                    free(content);
+                    content = newContent;
+                    across = fileData.cursor_x;
+                }
+                break;
             default:
+                if (isprint(choice))
+                {
+                    int cursorPos = cursorToCharPos(content, fileData.cursor_x, fileData.cursor_y);
+                    char *newContent = malloc(strlen(content) + 2);
+                    strncpy(newContent, content, cursorPos);
+                    newContent[cursorPos] = choice;
+                    strncpy(newContent + cursorPos + 1, content + cursorPos, strlen(content) - cursorPos);
+                    newContent[strlen(content) + 1] = '\0';
+                    free(content);
+                    content = newContent;
+                    fileData.cursor_x++;
+                    across = fileData.cursor_x;
+                }
                 break;
             }
+            break;
         case 2:
             switch (choice)
             {
             case 27:
                 mode = 0;
                 break;
+            case KEY_BACKSPACE:
+                if (strlen(command) > 0)
+                {
+                    char *newCommand = malloc(strlen(command));
+                    strncpy(newCommand, command, strlen(command) - 1);
+                    newCommand[strlen(command) - 1] = '\0';
+                    free(command);
+                    command = newCommand;
+                }
+                break;
+            case '\n':
+            
+                switch (command[0])
+                {
+                case 'w':
+                    if (strlen(path) != 0)
+                    {
+                        FILE *fptr;
+                        fptr = fopen(path, "w");
+                        if (fptr != NULL)
+                        {
+                            fwrite(content, 1, strlen(content), fptr);
+                            fclose(fptr);
+                        }
+                    }
+                    if (strlen(command)==1 || command[1] != 'q') break;
+                case 'q':
+                    running = 0;
+                    break;
+                case 's':
+                    if (strlen(command) > 1)
+                    {
+                        char *newPath = malloc(strlen(command) - 1);
+                        strncpy(newPath, command + 1, strlen(command) - 1);
+                        newPath[strlen(command) - 1] = '\0';
+                        FILE *fptr;
+                        fptr = fopen(newPath, "w");
+                        if (fptr != NULL)
+                        {
+                            fwrite(content, 1, strlen(content), fptr);
+                            fclose(fptr);
+                        }
+                        free(path);
+                        path = newPath;
+                    }
+                    break;
+                default:
+                    break;
+                }
+                
+                command = realloc(command,1);
+                command[0] = '\0';
+                mode = 0;
+                break;
             default:
+                if (isprint(choice))
+                {
+                    char *newCommand = malloc(strlen(command) + 2);
+                    strncpy(newCommand, command, strlen(command));
+                    newCommand[strlen(command)] = choice;
+                    newCommand[strlen(command) + 1] = '\0';
+                    free(command);
+                    command = newCommand;
+                }
                 break;
             }
             break;
@@ -201,12 +363,18 @@ int openFile(char *path)
         {
             break;
         }
+        if (fileData.cursor_y < fileData.scroll)
+        {
+            fileData.scroll = fileData.cursor_y;
+        }
         lineAndCharNum = getLineAndCharNum(content);
         fileData.numLines = lineAndCharNum.lineNum;
         fileData.numChars = lineAndCharNum.charNum;
         render(fileData); // Re-render the menu
     }
+
     free(content);
+    free(command);
     // Clean up and exit ncurses
     endwin();
 
