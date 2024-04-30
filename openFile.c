@@ -103,6 +103,7 @@ int openFile(char *path)
             fclose(fptr);
         }
     }
+    path = malloc(1);
     int mode = 0;
     char *command = malloc(1);
     command[0] = '\0';
@@ -128,7 +129,7 @@ int openFile(char *path)
     while (1)
     {
         choice = getch(); // Get user input
-        printf("%d\n", choice);
+        sprintf(path, "Choice: %02X", choice);
         if (mode != 2)
         {
             switch (choice)
@@ -227,6 +228,7 @@ int openFile(char *path)
                 mode = 0;
                 break;
             case KEY_BACKSPACE:
+            case 0x7F:
                 if (strlen(content) > 0)
                 {
                     int cursorPos = cursorToCharPos(content, fileData.cursor_x, fileData.cursor_y);
@@ -250,6 +252,7 @@ int openFile(char *path)
                     across = fileData.cursor_x;
                 }
                 break;
+            case 0x17:
             case KEY_DC:
                 if (strlen(content) > 0)
                 {
@@ -292,6 +295,7 @@ int openFile(char *path)
                 mode = 0;
                 break;
             case KEY_BACKSPACE:
+            case 0x7F:
                 if (strlen(command) > 0)
                 {
                     char *newCommand = malloc(strlen(command));
