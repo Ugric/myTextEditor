@@ -19,15 +19,14 @@ struct lineAndCharNum getLineAndCharNum(char *content)
 {
     int numLines = 1;
     int numChars = strlen(content);
-    for (int i = 0; i < strlen(content); i++)
+    for (int i = 0; i < numChars; i++)
     {
         if (content[i] == '\n')
         {
             numLines++;
         }
     }
-    struct lineAndCharNum lineAndCharNum = {numLines, numChars};
-    return lineAndCharNum;
+    return (struct lineAndCharNum){numLines, numChars};
 }
 
 int lineLength(char *content, int cursor_y)
@@ -35,7 +34,7 @@ int lineLength(char *content, int cursor_y)
     int numLines = 0;
     int numChars = strlen(content);
     int across = 0;
-    for (int i = 0; i < strlen(content); i++)
+    for (int i = 0; i < numChars; i++)
     {
         if (content[i] == '\n')
         {
@@ -64,7 +63,7 @@ int cursorToCharPos(char *content, int cursor_x, int cursor_y)
     int numChars = strlen(content);
     int across = 0;
     int i;
-    for (i = 0; i < strlen(content); i++)
+    for (i = 0; i < numChars; i++)
     {
         if (content[i] == '\n')
         {
@@ -293,7 +292,7 @@ int openFile(char *path)
                 default:
                     if (isprint(choice))
                     {
-                        sprintf(path, "%s, %02X", path, choice);
+                        // sprintf(path, "%s, %02X", path, choice);
                         int cursorPos = cursorToCharPos(content, fileData.cursor_x, fileData.cursor_y);
                         char *newContent = malloc(strlen(content) + 2);
                         strncpy(newContent, content, cursorPos);
@@ -362,6 +361,31 @@ int openFile(char *path)
                             path = newPath;
                         }
                         break;
+                    case 'l':
+                        if (strlen(command) > 2)
+                        {
+                            char *line = malloc(strlen(command) - 2);
+                            strncpy(line, command + 2, strlen(command) - 2);
+                            line[strlen(command) - 2] = '\0';
+                            int lineNum = atoi(line);
+                            int numLines = 0;
+                            int numChars = strlen(content);
+                            int i;
+                            for (i = 0; i < numChars; i++)
+                            {
+                                if (content[i] == '\n')
+                                {
+                                    numLines++;
+                                    if (numLines == lineNum)
+                                    {
+                                        break;
+                                    }
+                                }
+                            }
+                            fileData.cursor_y = numLines - 1;
+                            fileData.cursor_x = 0;
+                        }
+                        break;
                     default:
                         break;
                     }
@@ -395,9 +419,9 @@ int openFile(char *path)
         {
             fileData.scroll = fileData.cursor_y;
         }
-        if (fileData.cursor_y - (LINES - 4) == fileData.scroll)
+        if (fileData.cursor_y - (LINES - 4) >= fileData.scroll)
         {
-            fileData.scroll++;
+            fileData.scroll = fileData.cursor_y - (LINES - 4) + 1;
         }
         lineAndCharNum = getLineAndCharNum(content);
         fileData.numLines = lineAndCharNum.lineNum;
