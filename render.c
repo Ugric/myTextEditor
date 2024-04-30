@@ -12,11 +12,8 @@ void render(struct FileData fileData)
     clear();
 
     // Display Header
-    printw("%s - %s\n", programName, *fileData.path);
-    for (int i = 0; i < COLS; i++)
-    {
-        printw("-");
-    }
+
+    mvprintw(0, 0, "%s - %s\n", programName, *fileData.path);
 
     // Display content
     char *line = malloc(1);
@@ -27,14 +24,29 @@ void render(struct FileData fileData)
     int contentHeight = LINES - 4;
     int contentWidth = COLS - contentBeginX - 1;
 
+    for (int i = 0; i < COLS; i++)
+    {
+        if (i == contentBeginX - 2)
+        {
+            printw("╤");
+        }
+        else
+        {
+            printw("═");
+        }
+    }
+
+    move(contentBeginY, 0);
+
     int LineNum = 1;
     int newLine = 1;
     int length = strlen(content);
-    for (int i = 0; (i < length+1)&&(LineNum <= (fileData.scroll+contentHeight+contentBeginY-1)); i++)
+    int lineLength = 0;
+    for (int i = 0; (i < length + 1) && (LineNum <= (fileData.scroll + contentHeight + contentBeginY - 1)); i++)
     {
-        if (LineNum < fileData.scroll+1)
+        if (LineNum < fileData.scroll + 1)
         {
-            if (i<length && content[i] == '\n')
+            if (i < length && content[i] == '\n')
             {
                 LineNum++;
             }
@@ -42,25 +54,28 @@ void render(struct FileData fileData)
         }
         if (newLine)
         {
-            char* line = malloc(1);
+            char *line = malloc(1);
+            lineLength = 0;
             sprintf(line, "%d", LineNum);
             for (int i = 0; i < widthOfLineNumText - strlen(line); i++)
             {
                 printw(" ");
             }
             printw("%s", line);
-            printw(" | ");
+            free(line);
+            printw(" │ ");
             LineNum++;
             newLine = 0;
-            free(line);
         }
-        if (i<length && content[i] == '\n')
+        if (i < length && content[i] == '\n')
         {
             newLine = 1;
+
         }
-        if (i<length)
+        if ((i < length) && (lineLength-1 < contentWidth))
         {
             printw("%c", content[i]);
+            lineLength++;
         }
     }
 
@@ -68,7 +83,14 @@ void render(struct FileData fileData)
     move(LINES - 2, 0);
     for (int i = 0; i < COLS; i++)
     {
-        printw("-");
+        if (i == contentBeginX - 2)
+        {
+            printw("╧");
+        }
+        else
+        {
+            printw("═");
+        }
     }
     switch (*fileData.mode)
     {
@@ -89,7 +111,7 @@ void render(struct FileData fileData)
     {
     case 0:
     case 1:
-        move(contentBeginY + fileData.cursor_y-fileData.scroll, contentBeginX + fileData.cursor_x);
+        move(contentBeginY + fileData.cursor_y - fileData.scroll, contentBeginX + fileData.cursor_x);
         break;
     case 2:
         move(LINES - 1, 1 + strlen(*fileData.command));

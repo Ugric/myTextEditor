@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
+#include <locale.h>
 
 struct lineAndCharNum
 {
@@ -70,7 +71,7 @@ int cursorToCharPos(char *content, int cursor_x, int cursor_y)
             numLines++;
             if (numLines == cursor_y)
             {
-                return i + cursor_x+1;
+                return i + cursor_x + 1;
             }
             across = 0;
         }
@@ -110,6 +111,7 @@ int openFile(char *path)
 
     struct FileData fileData = {&path, &content, &command, &mode, 0, 0, 0, 0, 0};
 
+    setlocale(LC_ALL, "");
     initscr();
     cbreak();
     keypad(stdscr, TRUE);
@@ -167,9 +169,15 @@ int openFile(char *path)
                 }
                 break;
             case KEY_LEFT:
-                if (across > 0)
+                if (fileData.cursor_x > 0)
                 {
-                    across--;
+                    fileData.cursor_x--;
+                    across = fileData.cursor_x;
+                }
+                else if (fileData.cursor_y > 0)
+                {
+                    fileData.cursor_y--;
+                    across = lineLength(content, fileData.cursor_y);
                 }
                 cursorLineLength = lineLength(content, fileData.cursor_y);
                 fileData.cursor_x = across;
@@ -183,6 +191,11 @@ int openFile(char *path)
                 if (across < lineWidth)
                 {
                     across++;
+                }
+                else
+                {
+                    across = 0;
+                    fileData.cursor_y++;
                 }
                 cursorLineLength = lineLength(content, fileData.cursor_y);
                 fileData.cursor_x = across;
@@ -236,7 +249,7 @@ int openFile(char *path)
                     {
                         break;
                     }
-                    int length = lineLength(content, fileData.cursor_y-1);
+                    int length = lineLength(content, fileData.cursor_y - 1);
                     char *newContent = malloc(strlen(content));
                     strncpy(newContent, content, cursorPos - 1);
                     strncpy(newContent + cursorPos - 1, content + cursorPos, strlen(content) - cursorPos);
@@ -306,7 +319,7 @@ int openFile(char *path)
                 }
                 break;
             case '\n':
-            
+
                 switch (command[0])
                 {
                 case 'w':
@@ -320,7 +333,8 @@ int openFile(char *path)
                             fclose(fptr);
                         }
                     }
-                    if (strlen(command)==1 || command[1] != 'q') break;
+                    if (strlen(command) == 1 || command[1] != 'q')
+                        break;
                 case 'q':
                     running = 0;
                     break;
@@ -344,8 +358,8 @@ int openFile(char *path)
                 default:
                     break;
                 }
-                
-                command = realloc(command,1);
+
+                command = realloc(command, 1);
                 command[0] = '\0';
                 mode = 0;
                 break;
