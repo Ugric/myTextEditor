@@ -104,7 +104,7 @@ int openFile(char *path)
             fclose(fptr);
         }
     }
-    path = malloc(1);
+    // path = malloc(100);
     int mode = 0;
     char *command = malloc(1);
     command[0] = '\0';
@@ -131,7 +131,8 @@ int openFile(char *path)
     while (1)
     {
         choice = getch(); // Get user input
-        sprintf(path, "Choice: %02X", choice);
+        // sprintf(path, "%s, %02X", path, choice);
+        int stop = 0;
         if (mode != 2)
         {
             switch (choice)
@@ -151,6 +152,7 @@ int openFile(char *path)
                         fileData.cursor_x = cursorLineLength;
                     }
                 }
+                stop = 1;
                 break;
             case KEY_DOWN:
                 if (fileData.cursor_y < fileData.numLines - 1)
@@ -167,6 +169,7 @@ int openFile(char *path)
                         fileData.cursor_x = cursorLineLength;
                     }
                 }
+                stop = 1;
                 break;
             case KEY_LEFT:
                 if (fileData.cursor_x > 0)
@@ -185,6 +188,7 @@ int openFile(char *path)
                 {
                     fileData.cursor_x = cursorLineLength;
                 }
+                stop = 1;
                 break;
             case KEY_RIGHT:
                 lineWidth = lineLength(content, fileData.cursor_y);
@@ -192,7 +196,7 @@ int openFile(char *path)
                 {
                     across++;
                 }
-                else
+                else if (fileData.cursor_y < fileData.numLines - 1)
                 {
                     across = 0;
                     fileData.cursor_y++;
@@ -203,181 +207,185 @@ int openFile(char *path)
                 {
                     fileData.cursor_x = cursorLineLength;
                 }
+                stop = 1;
                 break;
             }
         }
-
-        switch (mode)
+        if (!stop)
         {
-        case 0:
-            switch (choice)
+            switch (mode)
             {
-            case ':':
-                mode = 2;
-                break;
-            case 'i':
-                mode = 1;
-                break;
-            default:
-                break;
-            }
-            break;
-        case 1:
-            switch (choice)
-            {
-            case 10:
-                newContent = malloc(strlen(content) + 2);
-                strncpy(newContent, content, cursorToCharPos(content, fileData.cursor_x, fileData.cursor_y));
-                newContent[cursorToCharPos(content, fileData.cursor_x, fileData.cursor_y)] = '\n';
-                strncpy(newContent + cursorToCharPos(content, fileData.cursor_x, fileData.cursor_y) + 1, content + cursorToCharPos(content, fileData.cursor_x, fileData.cursor_y), strlen(content) - cursorToCharPos(content, fileData.cursor_x, fileData.cursor_y));
-                newContent[strlen(content) + 1] = '\0';
-                free(content);
-                content = newContent;
-                fileData.cursor_y++;
-                fileData.cursor_x = 0;
-                across = 0;
-                break;
-            case 27:
-                mode = 0;
-                break;
-            case KEY_BACKSPACE:
-            case 0x7F:
-                if (strlen(content) > 0)
+            case 0:
+                switch (choice)
                 {
-                    int cursorPos = cursorToCharPos(content, fileData.cursor_x, fileData.cursor_y);
-                    if (cursorPos == 0)
-                    {
-                        break;
-                    }
-                    int length = lineLength(content, fileData.cursor_y - 1);
-                    char *newContent = malloc(strlen(content));
-                    strncpy(newContent, content, cursorPos - 1);
-                    strncpy(newContent + cursorPos - 1, content + cursorPos, strlen(content) - cursorPos);
-                    newContent[strlen(content) - 1] = '\0';
-                    free(content);
-                    content = newContent;
-                    fileData.cursor_x--;
-                    if (fileData.cursor_x < 0 && fileData.cursor_y > 0)
-                    {
-                        fileData.cursor_y--;
-                        fileData.cursor_x = length;
-                    }
-                    across = fileData.cursor_x;
-                }
-                break;
-            case 0x17:
-            case KEY_DC:
-                if (strlen(content) > 0)
-                {
-                    int cursorPos = cursorToCharPos(content, fileData.cursor_x, fileData.cursor_y);
-                    if (cursorPos == strlen(content))
-                    {
-                        break;
-                    }
-                    int length = lineLength(content, fileData.cursor_y);
-                    char *newContent = malloc(strlen(content));
-                    strncpy(newContent, content, cursorPos);
-                    strncpy(newContent + cursorPos, content + cursorPos + 1, strlen(content) - cursorPos);
-                    newContent[strlen(content) - 1] = '\0';
-                    free(content);
-                    content = newContent;
-                    across = fileData.cursor_x;
-                }
-                break;
-            default:
-                if (isprint(choice))
-                {
-                    int cursorPos = cursorToCharPos(content, fileData.cursor_x, fileData.cursor_y);
-                    char *newContent = malloc(strlen(content) + 2);
-                    strncpy(newContent, content, cursorPos);
-                    newContent[cursorPos] = choice;
-                    strncpy(newContent + cursorPos + 1, content + cursorPos, strlen(content) - cursorPos);
-                    newContent[strlen(content) + 1] = '\0';
-                    free(content);
-                    content = newContent;
-                    fileData.cursor_x++;
-                    across = fileData.cursor_x;
-                }
-                break;
-            }
-            break;
-        case 2:
-            switch (choice)
-            {
-            case 27:
-                mode = 0;
-                break;
-            case KEY_BACKSPACE:
-            case 0x7F:
-                if (strlen(command) > 0)
-                {
-                    char *newCommand = malloc(strlen(command));
-                    strncpy(newCommand, command, strlen(command) - 1);
-                    newCommand[strlen(command) - 1] = '\0';
-                    free(command);
-                    command = newCommand;
-                }
-                break;
-            case '\n':
-
-                switch (command[0])
-                {
-                case 'w':
-                    if (strlen(path) != 0)
-                    {
-                        FILE *fptr;
-                        fptr = fopen(path, "w");
-                        if (fptr != NULL)
-                        {
-                            fwrite(content, 1, strlen(content), fptr);
-                            fclose(fptr);
-                        }
-                    }
-                    if (strlen(command) == 1 || command[1] != 'q')
-                        break;
-                case 'q':
-                    running = 0;
+                case ':':
+                    mode = 2;
                     break;
-                case 's':
-                    if (strlen(command) > 1)
-                    {
-                        char *newPath = malloc(strlen(command) - 1);
-                        strncpy(newPath, command + 1, strlen(command) - 1);
-                        newPath[strlen(command) - 1] = '\0';
-                        FILE *fptr;
-                        fptr = fopen(newPath, "w");
-                        if (fptr != NULL)
-                        {
-                            fwrite(content, 1, strlen(content), fptr);
-                            fclose(fptr);
-                        }
-                        free(path);
-                        path = newPath;
-                    }
+                case 'i':
+                    mode = 1;
                     break;
                 default:
                     break;
                 }
-
-                command = realloc(command, 1);
-                command[0] = '\0';
-                mode = 0;
                 break;
-            default:
-                if (isprint(choice))
+            case 1:
+                switch (choice)
                 {
-                    char *newCommand = malloc(strlen(command) + 2);
-                    strncpy(newCommand, command, strlen(command));
-                    newCommand[strlen(command)] = choice;
-                    newCommand[strlen(command) + 1] = '\0';
-                    free(command);
-                    command = newCommand;
+                case 10:
+                    newContent = malloc(strlen(content) + 2);
+                    strncpy(newContent, content, cursorToCharPos(content, fileData.cursor_x, fileData.cursor_y));
+                    newContent[cursorToCharPos(content, fileData.cursor_x, fileData.cursor_y)] = '\n';
+                    strncpy(newContent + cursorToCharPos(content, fileData.cursor_x, fileData.cursor_y) + 1, content + cursorToCharPos(content, fileData.cursor_x, fileData.cursor_y), strlen(content) - cursorToCharPos(content, fileData.cursor_x, fileData.cursor_y));
+                    newContent[strlen(content) + 1] = '\0';
+                    free(content);
+                    content = newContent;
+                    fileData.cursor_y++;
+                    fileData.cursor_x = 0;
+                    across = 0;
+                    break;
+                case 27:
+                    mode = 0;
+                    break;
+                case KEY_BACKSPACE:
+                case 0x7F:
+                    if (strlen(content) > 0)
+                    {
+                        int cursorPos = cursorToCharPos(content, fileData.cursor_x, fileData.cursor_y);
+                        if (cursorPos == 0)
+                        {
+                            break;
+                        }
+                        int length = lineLength(content, fileData.cursor_y - 1);
+                        char *newContent = malloc(strlen(content));
+                        strncpy(newContent, content, cursorPos - 1);
+                        strncpy(newContent + cursorPos - 1, content + cursorPos, strlen(content) - cursorPos);
+                        newContent[strlen(content) - 1] = '\0';
+                        free(content);
+                        content = newContent;
+                        fileData.cursor_x--;
+                        if (fileData.cursor_x < 0 && fileData.cursor_y > 0)
+                        {
+                            fileData.cursor_y--;
+                            fileData.cursor_x = length;
+                        }
+                        across = fileData.cursor_x;
+                    }
+                    break;
+                case 0x17:
+                case KEY_DC:
+                    if (strlen(content) > 0)
+                    {
+                        int cursorPos = cursorToCharPos(content, fileData.cursor_x, fileData.cursor_y);
+                        if (cursorPos == strlen(content))
+                        {
+                            break;
+                        }
+                        int length = lineLength(content, fileData.cursor_y);
+                        char *newContent = malloc(strlen(content));
+                        strncpy(newContent, content, cursorPos);
+                        strncpy(newContent + cursorPos, content + cursorPos + 1, strlen(content) - cursorPos);
+                        newContent[strlen(content) - 1] = '\0';
+                        free(content);
+                        content = newContent;
+                        across = fileData.cursor_x;
+                    }
+                    break;
+                default:
+                    if (isprint(choice))
+                    {
+                        sprintf(path, "%s, %02X", path, choice);
+                        int cursorPos = cursorToCharPos(content, fileData.cursor_x, fileData.cursor_y);
+                        char *newContent = malloc(strlen(content) + 2);
+                        strncpy(newContent, content, cursorPos);
+                        newContent[cursorPos] = choice;
+                        strncpy(newContent + cursorPos + 1, content + cursorPos, strlen(content) - cursorPos);
+                        newContent[strlen(content) + 1] = '\0';
+                        free(content);
+                        content = newContent;
+                        fileData.cursor_x++;
+                        across = fileData.cursor_x;
+                    }
+                    break;
                 }
                 break;
+            case 2:
+                switch (choice)
+                {
+                case 27:
+                    mode = 0;
+                    break;
+                case KEY_BACKSPACE:
+                case 0x7F:
+                    if (strlen(command) > 0)
+                    {
+                        char *newCommand = malloc(strlen(command));
+                        strncpy(newCommand, command, strlen(command) - 1);
+                        newCommand[strlen(command) - 1] = '\0';
+                        free(command);
+                        command = newCommand;
+                    }
+                    break;
+                case '\n':
+
+                    switch (command[0])
+                    {
+                    case 'w':
+                        if (strlen(path) != 0)
+                        {
+                            FILE *fptr;
+                            fptr = fopen(path, "w");
+                            if (fptr != NULL)
+                            {
+                                fwrite(content, 1, strlen(content), fptr);
+                                fclose(fptr);
+                            }
+                        }
+                        if (strlen(command) == 1 || command[1] != 'q')
+                            break;
+                    case 'q':
+                        running = 0;
+                        break;
+                    case 's':
+                        if (strlen(command) > 1)
+                        {
+                            char *newPath = malloc(strlen(command) - 1);
+                            strncpy(newPath, command + 1, strlen(command) - 1);
+                            newPath[strlen(command) - 1] = '\0';
+                            FILE *fptr;
+                            fptr = fopen(newPath, "w");
+                            if (fptr != NULL)
+                            {
+                                fwrite(content, 1, strlen(content), fptr);
+                                fclose(fptr);
+                            }
+                            free(path);
+                            path = newPath;
+                        }
+                        break;
+                    default:
+                        break;
+                    }
+
+                    command = realloc(command, 1);
+                    command[0] = '\0';
+                    mode = 0;
+                    break;
+                default:
+                    if (isprint(choice))
+                    {
+                        char *newCommand = malloc(strlen(command) + 2);
+                        strncpy(newCommand, command, strlen(command));
+                        newCommand[strlen(command)] = choice;
+                        newCommand[strlen(command) + 1] = '\0';
+                        free(command);
+                        command = newCommand;
+                    }
+                    break;
+                }
+                break;
+            default:
+                break;
             }
-            break;
-        default:
-            break;
         }
         if (!running)
         {
