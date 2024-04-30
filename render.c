@@ -70,24 +70,33 @@ void render(struct FileData fileData)
     {
         printw("-");
     }
-    if (*fileData.mode == 0)
+    switch (*fileData.mode)
     {
+    case 0:
         printw("Normal Mode");
-    }
-    else if (*fileData.mode == 1)
-    {
+        break;
+    case 1:
         printw("Insert Mode");
-    }
-    else if (*fileData.mode == 2)
-    {
-        printw("Command Mode :%s", *fileData.command);
-    }
-    else
-    {
+        break;
+    case 2:
+        printw(":%s", *fileData.command);
+        break;
+    default:
         printw("Unknown Mode");
+        break;
     }
-
-    move(contentBeginY + fileData.cursor_y-fileData.scroll, contentBeginX + fileData.cursor_x);
+    switch (*fileData.mode)
+    {
+    case 0:
+    case 1:
+        move(contentBeginY + fileData.cursor_y-fileData.scroll, contentBeginX + fileData.cursor_x);
+        break;
+    case 2:
+        move(LINES - 1, 1 + strlen(*fileData.command));
+        break;
+    default:
+        break;
+    }
 
     refresh();
     free(line);
