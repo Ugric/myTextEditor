@@ -82,8 +82,10 @@ int cursorToCharPos(char *content, int cursor_x, int cursor_y)
     return i;
 }
 
-int openFile(char *path)
+int openFile(char *Path)
 {
+    char *path = malloc(strlen(Path) + 1);
+    strcpy(path, Path);
     ESCDELAY = 0;
     char *content = malloc(0);
 
@@ -345,11 +347,11 @@ int openFile(char *path)
                         running = 0;
                         break;
                     case 's':
-                        if (strlen(command) > 1)
+                        if (strlen(command) > 2)
                         {
-                            char *newPath = malloc(strlen(command) - 1);
-                            strncpy(newPath, command + 1, strlen(command) - 1);
-                            newPath[strlen(command) - 1] = '\0';
+                            char *newPath = malloc(strlen(command) - 2);
+                            strncpy(newPath, command + 2, strlen(command) - 2);
+                            newPath[strlen(command) - 2] = '\0';
                             FILE *fptr;
                             fptr = fopen(newPath, "w");
                             if (fptr != NULL)
@@ -431,6 +433,7 @@ int openFile(char *path)
 
     free(content);
     free(command);
+    free(path);
     // Clean up and exit ncurses
     endwin();
 
