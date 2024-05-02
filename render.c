@@ -52,64 +52,64 @@ void render(struct FileData fileData)
     int lineLength = 0;
     int scroll_x = fileData.cursor_x / (contentWidth + 1);
     int overLine = 0;
-        for (int i = 0; (i < length + 1) && (LineNum <= (fileData.scroll + contentHeight + contentBeginY - 1)); i++)
+    for (int i = 0; (i < length + 1) && (LineNum <= (fileData.scroll + contentHeight + contentBeginY - 1)); i++)
+    {
+        if (LineNum < fileData.scroll + 1)
         {
-            if (LineNum < fileData.scroll + 1)
+            if (i < length && content[i] == '\n')
             {
-                if (i < length && content[i] == '\n')
-                {
-                    LineNum++;
-                }
-                continue;
-            }
-            if (newLine)
-            {
-                if ((i != 0) && (newLine))
-                {
-                    move(contentBeginY + LineNum - fileData.scroll - 1, 0);
-                }
-                char *line = malloc(1);
-                lineLength = 0;
-                sprintf(line, "%d", LineNum);
-                int linelen = strlen(line);
-                for (int i = 0; i < widthOfLineNumText - linelen; i++)
-                {
-                    printw(" ");
-                }
-                printw("%s", line);
-                free(line);
-                printw("  ");
                 LineNum++;
-                newLine = 0;
-                overLine = 0;
             }
-            if ((i < length))
-            {
-                lineLength++;
-                if (content[i] == '\n')
-                {
-                    newLine = 1;
-                }
-                else if (!overLine)
-                {
-                    if ((lineLength > scroll_x * (contentWidth + 1)) && (lineLength <= ((contentWidth + 1) * (scroll_x + 1))))
-                    {
-                        printw("%c", content[i]);
-                    }
-                    else if (lineLength > ((contentWidth + 1) * (scroll_x + 1)))
-                    {
-                        overLine = 1;
-                    }
-                }
-            }
+            continue;
         }
-
-        // side line
-        for (int i = 0; i < contentHeight; i++)
+        if (newLine)
         {
-            move(i + contentBeginY, contentBeginX - 1);
-            printw("│");
+            if ((i != 0) && (newLine))
+            {
+                move(contentBeginY + LineNum - fileData.scroll - 1, 0);
+            }
+            char *line = malloc(1);
+            lineLength = 0;
+            sprintf(line, "%d", LineNum);
+            int linelen = strlen(line);
+            for (int i = 0; i < widthOfLineNumText - linelen; i++)
+            {
+                printw(" ");
+            }
+            printw("%s", line);
+            free(line);
+            printw("  ");
+            LineNum++;
+            newLine = 0;
+            overLine = 0;
         }
+        if (i < length)
+        {
+            lineLength++;
+            if (content[i] == '\n')
+            {
+                newLine = 1;
+            }
+            else if (!overLine)
+            {
+                if ((lineLength > scroll_x * (contentWidth + 1)) && (lineLength <= ((contentWidth + 1) * (scroll_x + 1))))
+                {
+                    printw("%c", content[i]);
+                }
+                else if (lineLength > ((contentWidth + 1) * (scroll_x + 1)))
+                {
+                    overLine = 1;
+                }
+            }
+        }
+    }
+
+    // side line
+    for (int i = 0; i < contentHeight; i++)
+    {
+        move(i + contentBeginY, contentBeginX - 1);
+        printw("│");
+    }
 
     // footer
     move(LINES - 2, 0);

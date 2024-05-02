@@ -142,10 +142,6 @@ int openFile(char *Path)
                 if (fileData.cursor_y > 0)
                 {
                     fileData.cursor_y--;
-                    if (fileData.cursor_y < fileData.scroll)
-                    {
-                        fileData.scroll--;
-                    }
                     int cursorLineLength = lineLength(content, fileData.cursor_y);
                     fileData.cursor_x = across;
                     if (fileData.cursor_x > cursorLineLength)
@@ -159,10 +155,6 @@ int openFile(char *Path)
                 if (fileData.cursor_y < fileData.numLines - 1)
                 {
                     fileData.cursor_y++;
-                    if (fileData.cursor_y - (LINES - 4) == fileData.scroll)
-                    {
-                        fileData.scroll++;
-                    }
                     int cursorLineLength = lineLength(content, fileData.cursor_y);
                     fileData.cursor_x = across;
                     if (fileData.cursor_x > cursorLineLength)
@@ -272,6 +264,18 @@ int openFile(char *Path)
                         across = fileData.cursor_x;
                     }
                     break;
+                case 9:
+                    newContent = malloc(strlen(content) + 2);
+                    strncpy(newContent, content, cursorToCharPos(content, fileData.cursor_x, fileData.cursor_y));
+                    newContent[cursorToCharPos(content, fileData.cursor_x, fileData.cursor_y)] = ' ';
+                    newContent[cursorToCharPos(content, fileData.cursor_x, fileData.cursor_y) + 1] = ' ';
+                    strncpy(newContent + cursorToCharPos(content, fileData.cursor_x, fileData.cursor_y) + 2, content + cursorToCharPos(content, fileData.cursor_x, fileData.cursor_y), strlen(content) - cursorToCharPos(content, fileData.cursor_x, fileData.cursor_y));
+                    newContent[strlen(content) + 2] = '\0';
+                    free(content);
+                    content = newContent;
+                    fileData.cursor_x += 2;
+                    across = fileData.cursor_x;
+                    break;
                 case 0x17:
                 case KEY_DC:
                     if (strlen(content) > 0)
@@ -361,6 +365,35 @@ int openFile(char *Path)
                             }
                             free(path);
                             path = newPath;
+                        }
+                        break;
+                    case 'o':
+                        if (strlen(command) > 2)
+                        {
+                            char *newPath = malloc(strlen(command) - 2);
+                            strncpy(newPath, command + 2, strlen(command) - 2);
+                            newPath[strlen(command) - 2] = '\0';
+                            FILE *fptr;
+                            fptr = fopen(newPath, "r");
+                            if (fptr != NULL)
+                            {
+                                // Read the contents of the file into the content variable
+                                fseek(fptr, 0, SEEK_END);
+                                long fsize = ftell(fptr);
+                                fseek(fptr, 0, SEEK_SET);
+                                content = realloc(content, fsize + 1);
+                                fread(content, 1, fsize, fptr);
+                                content[fsize] = 0;
+                                fclose(fptr);
+                                free(path);
+                                path = newPath;
+                            }
+                            else
+                            {
+                                content = realloc(content, 1);
+                                content[0] = '\0';
+                            }
+                            fileData = (struct FileData){&path, &content, &command, &mode, 0, 0, 0, 0, 0};
                         }
                         break;
                     case 'l':
