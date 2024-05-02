@@ -1,6 +1,8 @@
 #include "openFile.h"
 #include "config.h"
 #include "render.h"
+#include "cursorMovement.h"
+#include "lengths.h"
 
 #include <ncurses.h>
 #include <string.h>
@@ -9,85 +11,15 @@
 #include <ctype.h>
 #include <locale.h>
 
-struct lineAndCharNum
-{
-    int lineNum;
-    int charNum;
-};
-
-struct lineAndCharNum getLineAndCharNum(char *content)
-{
-    int numLines = 1;
-    int numChars = strlen(content);
-    for (int i = 0; i < numChars; i++)
-    {
-        if (content[i] == '\n')
-        {
-            numLines++;
-        }
-    }
-    return (struct lineAndCharNum){numLines, numChars};
-}
-
-int lineLength(char *content, int cursor_y)
-{
-    int numLines = 0;
-    int numChars = strlen(content);
-    int across = 0;
-    for (int i = 0; i < numChars; i++)
-    {
-        if (content[i] == '\n')
-        {
-            if (numLines == cursor_y)
-            {
-                return across;
-            }
-            numLines++;
-            across = 0;
-        }
-        else
-        {
-            across++;
-        }
-    }
-    return across;
-}
-
-int cursorToCharPos(char *content, int cursor_x, int cursor_y)
-{
-    if (cursor_y == 0)
-    {
-        return cursor_x;
-    }
-    int numLines = 0;
-    int numChars = strlen(content);
-    int across = 0;
-    int i;
-    for (i = 0; i < numChars; i++)
-    {
-        if (content[i] == '\n')
-        {
-            numLines++;
-            if (numLines == cursor_y)
-            {
-                return i + cursor_x + 1;
-            }
-            across = 0;
-        }
-        else
-        {
-            across++;
-        }
-    }
-    return i;
-}
-
 int openFile(char *Path)
 {
     char *path = malloc(strlen(Path) + 1);
+    char *message = malloc(1);
+    message[0] = '\0';
     strcpy(path, Path);
     ESCDELAY = 0;
-    char *content = malloc(0);
+    char *content = malloc(1);
+    content[0] = '\0';
 
     if (strlen(path) != 0)
     {
@@ -105,6 +37,8 @@ int openFile(char *Path)
             fclose(fptr);
         }
     }
+    char *content_COPY = malloc(strlen(content) + 1);
+    strcpy(content_COPY, content);
     // path = malloc(100);
     int mode = 0;
     char *command = malloc(1);
@@ -125,9 +59,7 @@ int openFile(char *Path)
     int across = 0;
 
     int choice;
-    int cursorLineLength;
     char *newContent;
-    int lineWidth;
     int running = 1;
     while (1)
     {
@@ -136,73 +68,7 @@ int openFile(char *Path)
         int stop = 0;
         if (mode != 2)
         {
-            switch (choice)
-            {
-            case KEY_UP:
-                if (fileData.cursor_y > 0)
-                {
-                    fileData.cursor_y--;
-                    int cursorLineLength = lineLength(content, fileData.cursor_y);
-                    fileData.cursor_x = across;
-                    if (fileData.cursor_x > cursorLineLength)
-                    {
-                        fileData.cursor_x = cursorLineLength;
-                    }
-                }
-                stop = 1;
-                break;
-            case KEY_DOWN:
-                if (fileData.cursor_y < fileData.numLines - 1)
-                {
-                    fileData.cursor_y++;
-                    int cursorLineLength = lineLength(content, fileData.cursor_y);
-                    fileData.cursor_x = across;
-                    if (fileData.cursor_x > cursorLineLength)
-                    {
-                        fileData.cursor_x = cursorLineLength;
-                    }
-                }
-                stop = 1;
-                break;
-            case KEY_LEFT:
-                if (fileData.cursor_x > 0)
-                {
-                    fileData.cursor_x--;
-                    across = fileData.cursor_x;
-                }
-                else if (fileData.cursor_y > 0)
-                {
-                    fileData.cursor_y--;
-                    across = lineLength(content, fileData.cursor_y);
-                }
-                cursorLineLength = lineLength(content, fileData.cursor_y);
-                fileData.cursor_x = across;
-                if (fileData.cursor_x > cursorLineLength)
-                {
-                    fileData.cursor_x = cursorLineLength;
-                }
-                stop = 1;
-                break;
-            case KEY_RIGHT:
-                lineWidth = lineLength(content, fileData.cursor_y);
-                if (across < lineWidth)
-                {
-                    across++;
-                }
-                else if (fileData.cursor_y < fileData.numLines - 1)
-                {
-                    across = 0;
-                    fileData.cursor_y++;
-                }
-                cursorLineLength = lineLength(content, fileData.cursor_y);
-                fileData.cursor_x = across;
-                if (fileData.cursor_x > cursorLineLength)
-                {
-                    fileData.cursor_x = cursorLineLength;
-                }
-                stop = 1;
-                break;
-            }
+            cursorMovement(choice, &fileData, &content, &across, &stop);
         }
         if (!stop)
         {
@@ -281,11 +147,10 @@ int openFile(char *Path)
                     if (strlen(content) > 0)
                     {
                         int cursorPos = cursorToCharPos(content, fileData.cursor_x, fileData.cursor_y);
-                        if (cursorPos == strlen(content))
+                        if (cursorPos == (int)strlen(content))
                         {
                             break;
                         }
-                        int length = lineLength(content, fileData.cursor_y);
                         char *newContent = malloc(strlen(content));
                         strncpy(newContent, content, cursorPos);
                         strncpy(newContent + cursorPos, content + cursorPos + 1, strlen(content) - cursorPos);
@@ -353,18 +218,18 @@ int openFile(char *Path)
                     case 's':
                         if (strlen(command) > 2)
                         {
-                            char *newPath = malloc(strlen(command) - 2);
-                            strncpy(newPath, command + 2, strlen(command) - 2);
-                            newPath[strlen(command) - 2] = '\0';
+                            path = realloc(path, strlen(command) - 2);
+                            strncpy(path, command + 2, strlen(command) - 2);
+                            path[strlen(command) - 2] = '\0';
                             FILE *fptr;
-                            fptr = fopen(newPath, "w");
+                            fptr = fopen(path, "w");
                             if (fptr != NULL)
                             {
                                 fwrite(content, 1, strlen(content), fptr);
                                 fclose(fptr);
+                                content_COPY = realloc(content_COPY, strlen(content) + 1);
+                                strcpy(content_COPY, content);
                             }
-                            free(path);
-                            path = newPath;
                         }
                         break;
                     case 'o':
@@ -466,7 +331,9 @@ int openFile(char *Path)
 
     free(content);
     free(command);
+    free(content_COPY);
     free(path);
+    free(message);
     // Clean up and exit ncurses
     endwin();
 

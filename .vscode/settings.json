@@ -3,6 +3,7 @@
         "*.ejs": "html",
         "ncurses.h": "c",
         "stdio.h": "c",
-        "string.h": "c"
+        "string.h": "c",
+        "cursormovement.h": "c"
     }
 }

@@ -5,9 +5,11 @@
 #include <stdio.h>
 #include <unistd.h>
 #include "openFile.h"
+#include <signal.h>
 
 int main(int argc, char *argv[])
 {
+    signal(SIGINT, SIG_IGN);
     char *path = "";
     if (argc > 1)
     {

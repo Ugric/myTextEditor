@@ -4,7 +4,7 @@ full:
 
 build:
 	mkdir -p bin
-	gcc -o bin/mte *.c -lncurses
+	gcc -o bin/mte *.c -lncurses -Wall -Wextra -Werror -pedantic -std=c99
 
 clean:
 	rm -rf bin
