@@ -9,6 +9,8 @@ struct FileData
     char **content;
     char **command;
     int *mode;
+    char **message;
+    int *showMessage;
     int cursor_x;
     int cursor_y;
     int scroll;

@@ -124,20 +124,27 @@ void render(struct FileData fileData)
             printw("═");
         }
     }
-    switch (*fileData.mode)
+    if (*fileData.showMessage)
     {
-    case 0:
-        printw("Normal Mode");
-        break;
-    case 1:
-        printw("Insert Mode");
-        break;
-    case 2:
-        printw(":%s", *fileData.command);
-        break;
-    default:
-        printw("Unknown Mode");
-        break;
+        printw("%s", *fileData.message);
+    }
+    else
+    {
+        switch (*fileData.mode)
+        {
+        case 0:
+            printw("Normal Mode");
+            break;
+        case 1:
+            printw("Insert Mode");
+            break;
+        case 2:
+            printw(":%s", *fileData.command);
+            break;
+        default:
+            printw("Unknown Mode");
+            break;
+        }
     }
     switch (*fileData.mode)
     {

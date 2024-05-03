@@ -1,6 +1,7 @@
 #include "lengths.h"
 
 #include <string.h>
+#include <stdio.h>
 
 struct lineAndCharNum getLineAndCharNum(char *content)
 {
@@ -38,6 +39,41 @@ int lineLength(char *content, int cursor_y)
         }
     }
     return across;
+}
+
+int indent(char *content, int cursor_y, int cursor_x)
+{
+    int numLines = 0;
+    int numChars = strlen(content);
+    int i = 0;
+    if (cursor_y != 0)
+    {
+        for (; i < numChars; i++)
+        {
+            if (content[i] == '\n')
+            {
+                numLines++;
+                if (numLines == cursor_y)
+                {
+                    break;
+                }
+            }
+        }
+        i++;
+    }
+    int indent = 0;
+    for (int j = i; j < numChars; j++)
+    {
+        if (content[j] == ' ' && indent < cursor_x)
+        {
+            indent++;
+        }
+        else
+        {
+            break;
+        }
+    }
+    return indent;
 }
 
 int cursorToCharPos(char *content, int cursor_x, int cursor_y)
