@@ -23,7 +23,7 @@ void render(struct FileData fileData)
     mvprintw(0, 0, "%s - %s\n", programName, *fileData.path);
 
     // Display content
-    char *line = malloc(1);
+    char *line = malloc(12);
     sprintf(line, "%d", fileData.numLines);
     int widthOfLineNumText = strlen(line) + 1;
     if (widthOfLineNumText < 4)
@@ -68,7 +68,7 @@ void render(struct FileData fileData)
             {
                 move(contentBeginY + LineNum - fileData.scroll - 1, 0);
             }
-            char *line = malloc(1);
+            char *line = malloc(12);
             lineLength = 0;
             sprintf(line, "%d", LineNum);
             int linelen = strlen(line);

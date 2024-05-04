@@ -41,6 +41,8 @@ int openFile(char *Path)
     {
         char *myMessage = "New File";
         message = realloc(message, strlen(myMessage) + 1);
+        strcpy(message, myMessage);
+        showMessage = 1;
     }
     char *content_COPY = malloc(strlen(content) + 1);
     strcpy(content_COPY, content);
@@ -102,14 +104,14 @@ int openFile(char *Path)
                 {
                 case 10:
                     lineIndent = indent(content, fileData.cursor_y, fileData.cursor_x);
-                    newContent = malloc(strlen(content) + lineIndent + 1);
+                    newContent = malloc(strlen(content) + lineIndent+2);
                     int cursorPos = cursorToCharPos(content, fileData.cursor_x, fileData.cursor_y);
                     strncpy(newContent, content, cursorPos);
                     newContent[cursorPos] = '\n';
                     for (int i = 0; i < lineIndent; i++)
                         newContent[cursorPos + i + 1] = ' ';
                     strncpy(newContent + cursorPos + lineIndent + 1, content + cursorPos, strlen(content) - cursorPos);
-                    newContent[strlen(content) + cursorPos + lineIndent + 1] = '\0';
+                    newContent[strlen(content) + lineIndent + 1] = '\0';
                     free(content);
                     content = newContent;
                     fileData.cursor_y++;
@@ -151,7 +153,7 @@ int openFile(char *Path)
                             break;
                         }
                         int length = lineLength(content, fileData.cursor_y - toRemove);
-                        newContent = malloc(strlen(content));
+                        newContent = malloc(strlen(content)-toRemove + 1);
                         strncpy(newContent, content, cursorPos - toRemove);
                         strncpy(newContent + cursorPos - toRemove, content + cursorPos, strlen(content) - cursorPos);
                         newContent[strlen(content) - toRemove] = '\0';
@@ -167,7 +169,7 @@ int openFile(char *Path)
                     }
                     break;
                 case 9:
-                    newContent = malloc(strlen(content) + tabSize);
+                    newContent = malloc(strlen(content) + tabSize+1);
                     strncpy(newContent, content, cursorToCharPos(content, fileData.cursor_x, fileData.cursor_y));
                     for (int i = 0; i < tabSize; i++)
                         newContent[cursorToCharPos(content, fileData.cursor_x, fileData.cursor_y) + i] = ' ';
@@ -231,7 +233,6 @@ int openFile(char *Path)
                     }
                     break;
                 case '\n':
-
                     switch (command[0])
                     {
                     case 'w':
